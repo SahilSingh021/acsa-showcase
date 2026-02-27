@@ -1,0 +1,320 @@
+﻿@using acsa_web.Models
+@model List<UserLog>
+
+@{
+    ViewData["Title"] = "Malicious Logs";
+
+    var logs = Model ?? new List<UserLog>();
+    int total = logs.Count;
+
+    string TagFor(string msg)
+    {
+        msg ??= "";
+
+        if (msg.Contains("crc", StringComparison.OrdinalIgnoreCase))
+            return "CRC";
+
+        if (msg.Contains("module", StringComparison.OrdinalIgnoreCase))
+            return "MODULE";
+
+        if (msg.Contains("debugger", StringComparison.OrdinalIgnoreCase))
+            return "DBGX";
+
+        return "MAL";
+    }
+
+    string TagBadge(string tag) => tag switch
+    {
+        "CRC" => "badge badge-warning badge-outline",
+        "MODULE" => "badge badge-error badge-outline",
+        "DBGX" => "badge badge-error badge-outline",
+        _ => "badge badge-outline"
+    };
+
+    string TagDot(string tag) => tag switch
+    {
+        "CRC" => "bg-warning",
+        "MODULE" => "bg-error",
+        "DBGX" => "bg-error",
+        _ => "bg-base-content/40"
+    };
+}
+
+<style>
+    .mh-scroll {
+        overflow: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+        .mh-scroll::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+        }
+</style>
+
+<!-- header -->
+<div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
+    <div>
+        <h1 class="text-2xl font-bold">Malicious Logs</h1>
+        <div class="text-sm opacity-70 mt-1">
+            Showing the latest 200 malicious events.
+        </div>
+    </div>
+
+    <button class="btn btn-outline h-11 gap-2"
+            onclick="location.reload()">
+        Refresh
+    </button>
+</div>
+
+<!-- filters -->
+<div class="card bg-base-100 border border-base-300 shadow-sm mb-4">
+    <div class="card-body p-4">
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-end">
+
+            <div class="lg:col-span-8 form-control">
+                <label class="label pb-1">
+                    <span class="label-text">Search</span>
+                </label>
+                <input id="q"
+                       class="input input-bordered h-11 w-full"
+                       placeholder="Search username or message... (dbgx, crc, module)"
+                       autocomplete="off" />
+            </div>
+
+            <div class="lg:col-span-4 form-control">
+                <label class="label pb-1">
+                    <span class="label-text">User</span>
+                </label>
+                <select id="userFilter"
+                        class="select select-bordered h-11 w-full">
+                    <option value="">All users</option>
+                    @foreach (var u in logs
+                                        .Select(x => x.User?.UserName)
+                                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                                        .Distinct()
+                                        .OrderBy(x => x))
+                    {
+                        <option value="@u">@u</option>
+                    }
+                </select>
+            </div>
+
+        </div>
+
+        <div class="text-xs opacity-60 mt-3" id="matchCountLabel">
+            Showing @total
+        </div>
+
+    </div>
+</div>
+
+@if (!logs.Any())
+{
+    <div class="alert alert-info">
+        No malicious logs found.
+    </div>
+}
+else
+{
+    <!-- table -->
+    <div class="card bg-base-100 border border-base-300 shadow-sm">
+        <div class="card-body p-0">
+            <div class="overflow-x-auto">
+                <div class="mh-scroll rounded-2xl border border-transparent max-h-[600px]">
+
+                    <table class="table w-full">
+                        <thead class="text-xs uppercase opacity-70 bg-base-100">
+                            <tr>
+                                <th class="w-[200px]">Time</th>
+                                <th class="w-[120px]">Tag</th>
+                                <th class="w-[160px]">User</th>
+                                <th>Message</th>
+                                <th class="w-[110px] text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            @foreach (var log in logs.OrderByDescending(x => x.CreatedAt))
+                            {
+                                var local = log.CreatedAt.ToLocalTime();
+                                var localStr = local.ToString("dd MMM yyyy, HH:mm:ss");
+                                var utcStr = log.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss") + "Z";
+
+                                var uname = log.User?.UserName ?? "Deleted";
+                                var msg = (log.Message ?? "").Trim();
+                                var tag = TagFor(msg);
+
+                                var copy = $"{utcStr} | {localStr} | {tag} | {uname} | {msg}";
+                                <tr class="hover log-row"
+                                    data-user="@uname"
+                                    data-msg="@msg"
+                                    data-tag="@tag.ToLower()">
+
+                                    <td class="font-mono text-xs whitespace-nowrap">
+                                        <div class="flex flex-col">
+                                            <span class="rel opacity-70"
+                                                  data-utc="@log.CreatedAt.ToString("O")"></span>
+                                            <span>@localStr</span>
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-2 h-2 rounded-full @TagDot(tag)"></span>
+                                            <span class="@TagBadge(tag)">@tag</span>
+                                        </div>
+                                    </td>
+
+                                    <td class="text-sm font-medium">
+                                        @uname
+                                    </td>
+
+                                    <td class="text-sm break-words">
+                                        @msg
+                                    </td>
+
+                                    <td class="text-right">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline copy-btn"
+                                                data-copy="@copy">
+                                            Copy
+                                        </button>
+                                    </td>
+
+                                </tr>
+                            }
+
+                        </tbody>
+                    </table>
+
+                </div>
+            </div>
+
+            <div class="px-4 py-3 border-t border-base-300 text-xs opacity-60">
+                Showing <span id="footerShown">@total</span> logs.
+            </div>
+
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        (function () {
+
+            const q = document.getElementById('q');
+            const userFilter = document.getElementById('userFilter');
+            const countLabel = document.getElementById('matchCountLabel');
+            const footerShown = document.getElementById('footerShown');
+
+            function norm(s) { return (s || '').toLowerCase().trim(); }
+
+            function apply() {
+
+                let term = norm(q.value);
+                const user = userFilter.value;
+
+                // dbgx should match debugger
+                if (term === 'dbgx' || term === 'dbg')
+                    term = 'debugger';
+
+                const rows = document.querySelectorAll('.log-row');
+                let shown = 0;
+
+                rows.forEach(r => {
+
+                    const rUser = r.dataset.user || '';
+                    const rMsg  = r.dataset.msg || '';
+                    const rTag  = r.dataset.tag || '';
+
+                    const okUser = !user || rUser === user;
+
+                    const okTerm = !term
+                        || norm(rUser).includes(term)
+                        || norm(rMsg).includes(term)
+                        || norm(rTag).includes(term);
+
+                    const show = okUser && okTerm;
+
+                    r.classList.toggle('hidden', !show);
+                    if (show) shown++;
+                });
+
+                if (countLabel) countLabel.textContent = `Showing ${shown}`;
+                if (footerShown) footerShown.textContent = shown;
+            }
+
+            q?.addEventListener('input', apply);
+            userFilter?.addEventListener('change', apply);
+
+            document.querySelectorAll('.tag-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    q.value = btn.dataset.chip === 'dbgx'
+                        ? 'dbgx'
+                        : btn.dataset.chip;
+                    apply();
+                    q.focus();
+                });
+            });
+
+            document.querySelectorAll('.copy-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+
+                    const text = btn.dataset.copy || '';
+
+                    try {
+                        await navigator.clipboard.writeText(text);
+                    } catch {
+                        const ta = document.createElement("textarea");
+                        ta.value = text;
+                        document.body.appendChild(ta);
+                        ta.select();
+                        document.execCommand("copy");
+                        document.body.removeChild(ta);
+                    }
+
+                    const old = btn.textContent;
+                    btn.classList.remove("btn-outline");
+                    btn.classList.add("btn-success");
+                    btn.textContent = "Copied";
+
+                    setTimeout(() => {
+                        btn.classList.remove("btn-success");
+                        btn.classList.add("btn-outline");
+                        btn.textContent = old;
+                    }, 900);
+                });
+            });
+
+            function relTimeFromUtc(utcIso) {
+                const dt = new Date(utcIso);
+                const now = new Date();
+                const diff = Math.floor((now - dt) / 1000);
+
+                if (diff < 5) return "just now";
+                if (diff < 60) return diff + "s ago";
+                const mins = Math.floor(diff / 60);
+                if (mins < 60) return mins + "m ago";
+                const hrs = Math.floor(mins / 60);
+                if (hrs < 24) return hrs + "h ago";
+                const days = Math.floor(hrs / 24);
+                return days + "d ago";
+            }
+
+            function refreshRel() {
+                document.querySelectorAll(".rel").forEach(el => {
+                    const iso = el.dataset.utc;
+                    if (!iso) return;
+                    el.textContent = relTimeFromUtc(iso);
+                });
+            }
+
+            refreshRel();
+            setInterval(refreshRel, 60000);
+
+        })();
+    </script>
+}

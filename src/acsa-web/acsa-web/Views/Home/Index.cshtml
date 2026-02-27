@@ -1,0 +1,285 @@
+﻿@{
+    ViewData["Title"] = "Home";
+}
+
+<style>
+    .acsa-wrap {
+        position: relative;
+        overflow: hidden;
+        border-radius: 28px;
+        border: 1px solid color-mix(in oklab, hsl(var(--bc)) 10%, transparent);
+        background: radial-gradient(60rem 30rem at 10% 0%, rgba(99,102,241,.18), transparent 55%), radial-gradient(55rem 28rem at 100% 10%, rgba(34,197,94,.12), transparent 55%), radial-gradient(55rem 35rem at 40% 110%, rgba(14,165,233,.10), transparent 60%), color-mix(in oklab, hsl(var(--b1)) 92%, transparent);
+    }
+
+    .acsa-glass {
+        background: color-mix(in oklab, hsl(var(--b1)) 85%, transparent);
+        backdrop-filter: blur(12px);
+    }
+
+    .acsa-card {
+        border: 1px solid color-mix(in oklab, hsl(var(--bc)) 12%, transparent);
+        border-radius: 22px;
+        transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+
+        .acsa-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 50px rgba(0,0,0,.12);
+            border-color: color-mix(in oklab, hsl(var(--bc)) 22%, transparent);
+        }
+
+    .acsa-chip {
+        border: 1px solid color-mix(in oklab, hsl(var(--bc)) 14%, transparent);
+        border-radius: 999px;
+        padding: .45rem .8rem;
+    }
+
+    .acsa-fade {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(to bottom, rgba(0,0,0,.00), rgba(0,0,0,.03));
+    }
+</style>
+
+<div class="w-full">
+    <!-- hero -->
+    <section class="acsa-wrap shadow-sm">
+        <div class="acsa-fade"></div>
+
+        <div class="relative px-6 py-10 sm:px-10 sm:py-14">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+
+                <div class="lg:col-span-7">
+                    <div class="inline-flex flex-wrap items-center gap-2 acsa-chip acsa-glass">
+                        <span class="w-2 h-2 rounded-full bg-success"></span>
+                        <span class="text-sm font-semibold">Competitive fair-play platform</span>
+                        <span class="opacity-50 hidden sm:inline">•</span>
+                        <span class="text-sm opacity-80 hidden sm:inline">Verified client</span>
+                        <span class="opacity-50 hidden sm:inline">•</span>
+                        <span class="text-sm opacity-80 hidden sm:inline">Integrity checks</span>
+                    </div>
+
+                    <h1 class="text-4xl sm:text-6xl font-extrabold mt-6 leading-[1.05] tracking-tight">
+                        AC Secure Arena
+                    </h1>
+
+                    <p class="text-base sm:text-lg opacity-80 mt-4 max-w-2xl">
+                        Run structured AssaultCube matches in a controlled environment designed to reduce cheating and keep results skill-based.
+                        Lobbies, sessions, and validation are coordinated through the platform.
+                    </p>
+
+                    <div class="mt-7 flex flex-col sm:flex-row gap-3">
+                        <a asp-controller="Lobbies" asp-action="Index"
+                           class="btn btn-primary h-12 px-7 rounded-full gap-2 normal-case font-semibold">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" />
+                            </svg>
+                            Browse lobbies
+                        </a>
+
+                        <a asp-controller="Lobbies" asp-action="Index" asp-route-openCreate="1"
+                           class="btn btn-outline h-12 px-7 rounded-full gap-2 normal-case font-semibold acsa-glass">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            Create a lobby
+                        </a>
+
+                        <a asp-controller="Home" asp-action="LinkAccountWithGame"
+                           class="btn btn-ghost h-12 px-4 rounded-full normal-case font-semibold">
+                            Linking guide
+                        </a>
+                    </div>
+
+                    <div class="mt-8 flex flex-wrap gap-2 text-sm opacity-80">
+                        <span class="badge badge-outline">Structured sessions</span>
+                        <span class="badge badge-outline">Consistency-first</span>
+                        <span class="badge badge-outline">Non-kernel approach</span>
+                    </div>
+                </div>
+
+                <!-- hero side panel -->
+                <div class="lg:col-span-5">
+                    <div class="acsa-card acsa-glass p-6 sm:p-7 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <div class="font-bold">Match environment status</div>
+                            <span class="badge badge-success badge-outline">Active</span>
+                        </div>
+
+                        <p class="mt-4 text-sm opacity-80">
+                            ACSA uses a verified client and integrity validation to keep competitive play consistent.
+                            The goal is simple: reduce tampering and make matches easier to trust.
+                        </p>
+
+                        <div class="divider my-6"></div>
+
+                        <div class="space-y-3 text-sm">
+                            <div class="flex items-start gap-3">
+                                <span class="w-2 h-2 rounded-full bg-success mt-2"></span>
+                                <div>
+                                    <div class="font-semibold">Verified versions</div>
+                                    <div class="opacity-70">Everyone plays on the same build.</div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start gap-3">
+                                <span class="w-2 h-2 rounded-full bg-success mt-2"></span>
+                                <div>
+                                    <div class="font-semibold">Integrity validation</div>
+                                    <div class="opacity-70">Detects suspicious environment changes.</div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start gap-3">
+                                <span class="w-2 h-2 rounded-full bg-success mt-2"></span>
+                                <div>
+                                    <div class="font-semibold">Platform-controlled sessions</div>
+                                    <div class="opacity-70">Lobbies start matches with defined rules.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="divider my-6"></div>
+
+                        <div class="rounded-2xl bg-base-100/60 p-4 border border-base-300/40">
+                            <div class="text-xs opacity-70">Design principle</div>
+                            <div class="mt-1 text-sm opacity-80">
+                                Strong protection without kernel-level drivers, keeping systems responsive and minimizing unnecessary interference.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 grid grid-cols-2 gap-3">
+                        <div class="acsa-card bg-base-100 p-4">
+                            <div class="font-semibold text-sm">No kernel driver</div>
+                            <div class="text-xs opacity-70 mt-1">Non-intrusive by design.</div>
+                        </div>
+                        <div class="acsa-card bg-base-100 p-4">
+                            <div class="font-semibold text-sm">Skill-forward</div>
+                            <div class="text-xs opacity-70 mt-1">Less noise, better matches.</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- value cards -->
+    <section class="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-7">
+            <div class="acsa-card bg-base-100 p-6 sm:p-8 shadow-sm">
+                <h2 class="text-2xl sm:text-3xl font-bold">
+                    Built for organized competitive play
+                </h2>
+
+                <p class="text-sm sm:text-base opacity-80 mt-3 max-w-3xl">
+                    ACSA focuses on consistency: the same client, the same rules, and validation around the match environment.
+                    It’s a platform for players who want structured games without the usual “anything goes” chaos.
+                </p>
+
+                <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="acsa-card bg-base-200/50 p-5">
+                        <div class="font-semibold">Verified client</div>
+                        <div class="text-sm opacity-70 mt-1">
+                            Standardizes the competitive build for everyone in the lobby.
+                        </div>
+                    </div>
+
+                    <div class="acsa-card bg-base-200/50 p-5">
+                        <div class="font-semibold">Integrity checks</div>
+                        <div class="text-sm opacity-70 mt-1">
+                            Helps identify unexpected changes that undermine fair play.
+                        </div>
+                    </div>
+
+                    <div class="acsa-card bg-base-200/50 p-5">
+                        <div class="font-semibold">Lobby-driven rules</div>
+                        <div class="text-sm opacity-70 mt-1">
+                            Clear settings and structure for organized sessions.
+                        </div>
+                    </div>
+
+                    <div class="acsa-card bg-base-200/50 p-5">
+                        <div class="font-semibold">Smooth experience</div>
+                        <div class="text-sm opacity-70 mt-1">
+                            Built to keep gameplay responsive while protections run.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- how it works -->
+        <div class="lg:col-span-5">
+            <div class="acsa-card bg-base-100 p-6 sm:p-8 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold">How it works</h3>
+                    <span class="badge badge-outline">3 steps</span>
+                </div>
+
+                <div class="mt-5 space-y-4">
+                    <div class="flex items-start gap-3">
+                        <div class="w-9 h-9 rounded-2xl bg-base-200 border border-base-300/40 flex items-center justify-center font-bold">1</div>
+                        <div>
+                            <div class="font-semibold">Join or create a lobby</div>
+                            <div class="text-sm opacity-70">Pick rules, teams, and match settings.</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                        <div class="w-9 h-9 rounded-2xl bg-base-200 border border-base-300/40 flex items-center justify-center font-bold">2</div>
+                        <div>
+                            <div class="font-semibold">Start the session</div>
+                            <div class="text-sm opacity-70">The platform coordinates the protected match flow.</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                        <div class="w-9 h-9 rounded-2xl bg-base-200 border border-base-300/40 flex items-center justify-center font-bold">3</div>
+                        <div>
+                            <div class="font-semibold">Play with validation enabled</div>
+                            <div class="text-sm opacity-70">Checks help keep the environment consistent.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="divider my-7"></div>
+
+                <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <a asp-controller="Lobbies" asp-action="Index"
+                       class="btn btn-primary h-12 rounded-full normal-case font-semibold">
+                        Get started
+                    </a>
+
+                    <a asp-controller="Home" asp-action="LinkAccountWithGame"
+                       class="btn btn-outline h-12 rounded-full normal-case font-semibold">
+                        Linking guide
+                    </a>
+                </div>
+            </div>
+
+            <!-- what it's not -->
+            <div class="mt-6 acsa-card bg-base-200/50 p-6">
+                <div class="font-bold">What ACSA is not</div>
+                <div class="mt-3 space-y-2 text-sm opacity-80">
+                    <div class="flex items-start gap-2">
+                        <span class="w-2 h-2 rounded-full bg-error mt-2"></span>
+                        <span>No kernel driver or invasive system-level components.</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="w-2 h-2 rounded-full bg-error mt-2"></span>
+                        <span>Not designed for casual “quickmatch” style matchmaking.</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="w-2 h-2 rounded-full bg-error mt-2"></span>
+                        <span>Not dependent on third-party leagues to function.</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+</div>

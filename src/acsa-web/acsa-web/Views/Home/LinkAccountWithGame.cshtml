@@ -1,0 +1,155 @@
+﻿@using Microsoft.AspNetCore.Identity
+@inject UserManager<ApplicationUser> UserManager
+
+@{
+    ViewData["Title"] = "Link Game Account";
+    var user = await UserManager.GetUserAsync(User);
+    bool linked = user?.IsAccountLinkedWithGame ?? false;
+}
+
+<div class="max-w-6xl mx-auto">
+    <div class="p-0 sm:p-0">
+        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div class="min-w-0">
+                <h1 class="text-2xl font-bold">
+                    @(linked ? "Game Account Linked" : "Link Your Game Account")
+                </h1>
+                <p class="text-sm opacity-70 mt-1">
+                    Linking is automatic: no secret codes, no in-game commands.
+                </p>
+            </div>
+
+            <div class="shrink-0">
+                <span class="badge badge-outline px-4 py-2">
+                    <span class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full @(linked ? "bg-success" : "bg-warning")"></span>
+                        <span class="text-sm">@((linked) ? "Linked" : "Not linked")</span>
+                    </span>
+                </span>
+            </div>
+        </div>
+
+        <div class="divider my-6"></div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <section class="lg:col-span-7">
+                <div class="card bg-base-200 border border-base-300">
+                    <div class="card-body p-6">
+                        <h2 class="text-lg font-bold">How it works</h2>
+                        <p class="text-sm opacity-70 mt-1">
+                            Log in once through Anti-Cheat and your website account is linked automatically.
+                        </p>
+
+                        <div class="divider my-4"></div>
+
+                        <ol class="list-decimal pl-5 space-y-2 text-sm">
+                            <li><a href="/ASCA_GAME.zip" style="color:#2563eb; text-decoration: underline;">Download</a> & Launch the game normally (with Anti-Cheat).</li>
+                            <li>When the Anti-Cheat login window appears, enter your website email and password.</li>
+                            <li>Click Login. If details are correct, linking completes automatically.</li>
+                            <li>Make sure you have reistered for an in game account by following in-game instructions. </li>
+                            <li>Once linked, you can join lobbies from this website and play as normal.</li>
+                        </ol>
+
+                        <div class="divider my-5"></div>
+
+                        <h3 class="text-sm font-semibold">Behind the scenes</h3>
+                        <ul class="mt-2 space-y-2 text-sm opacity-80">
+                            <li class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-success"></span>
+                                <span>Your Anti-Cheat session is authenticated.</span>
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-success"></span>
+                                <span>Your game identity is linked to your website account.</span>
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-success"></span>
+                                <span>Your latest HWID and IP are updated for security checks.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                @if (linked)
+                {
+                    <div class="alert alert-success mt-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div>
+                            <div class="font-semibold">Already linked</div>
+                            <div class="text-sm opacity-80 mt-1">
+                                If you changed PC parts, reinstalled Windows, or your session expires, just log in again via Anti-Cheat.
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning mt-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M12 9v2m0 4h.01M10.29 3.86l-7.4 13.2A2 2 0 004.63 20h14.74a2 2 0 001.74-2.94l-7.4-13.2a2 2 0 00-3.42 0z" />
+                        </svg>
+                        <div>
+                            <div class="font-semibold">Not linked yet</div>
+                            <div class="text-sm opacity-80 mt-1">
+                                Launch the game and log in through the Anti-Cheat popup to link automatically.
+                            </div>
+                        </div>
+                    </div>
+                }
+            </section>
+
+            <aside class="lg:col-span-5">
+                <div class="card bg-base-200 border border-base-300">
+                    <div class="card-body p-6">
+                        <h2 class="text-lg font-bold">Troubleshooting</h2>
+
+                        <div class="mt-4 space-y-4 text-sm">
+                            <div>
+                                <div class="font-semibold">No Anti-Cheat login popup</div>
+                                <div class="opacity-70 mt-1">
+                                    Make sure you launched the latest game (.exe) that you downloaded from this website.
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="font-semibold">Login failed</div>
+                                <div class="opacity-70 mt-1">
+                                    Double-check your email/password. If you forgot your password, reset it on the website and try again.
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="font-semibold">Session expired</div>
+                                <div class="opacity-70 mt-1">
+                                    Log in again when prompted, the link will refresh automatically.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="divider my-5"></div>
+
+                        <h3 class="text-sm font-semibold">Security note</h3>
+                        <p class="text-sm opacity-70 mt-2">
+                            Never share your website password. Linking is done by logging in directly through the Anti-Cheat window.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card bg-base-200 border border-base-300 mt-6">
+                    <div class="card-body p-6">
+                        <h2 class="text-lg font-bold">Quick checklist</h2>
+                        <ul class="mt-3 space-y-2 text-sm opacity-80">
+                            <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-success"></span><span>Website account created</span></li>
+                            <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-success"></span><span>Game launched with Anti-Cheat</span></li>
+                            <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-success"></span><span>Logged in with website email/password</span></li>
+                            <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-success"></span><span>Verified automatically</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+</div>

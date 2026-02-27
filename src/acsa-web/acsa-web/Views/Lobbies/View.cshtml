@@ -1,0 +1,592 @@
+﻿@using System.Text.RegularExpressions
+@using acsa_web.Models
+@model acsa_web.Models.Lobby
+
+@{
+    ViewData["Title"] = $"{Model.Name} - Lobby";
+
+    var maps = ViewBag.Maps as IEnumerable<string> ?? Enumerable.Empty<string>();
+    bool isOwner = ViewBag.IsOwner is bool b && b;
+    int playerCount = Model.Users?.Count ?? 0;
+
+    string Humanize(string s) => Regex.Replace(s, "(\\B[A-Z])", " $1");
+
+    var started = Model.HasStarted;
+    var allModes = Enum.GetValues(typeof(GameMode)).Cast<GameMode>().ToList();
+
+    var initialMap = started
+        ? (Model.CurrentMap ?? maps.FirstOrDefault() ?? "")
+        : (Model.SelectedMap ?? maps.FirstOrDefault() ?? "");
+
+    var initialMode = started
+        ? (Model.CurrentMode ?? (int)allModes.First())
+        : (Model.SelectedMode ?? (int)allModes.First());
+
+    var canStart = isOwner && playerCount >= 2 && !started;
+}
+
+@if (TempData["ErrorMessage"] is string err)
+{
+    <div class="alert alert-error mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 9v2m0 4h.01M10.29 3.86l-7.4 13.2A2 2 0 004.63 20h14.74a2 2 0 001.74-2.94l-7.4-13.2a2 2 0 00-3.42 0z" />
+        </svg>
+        <span>@err</span>
+    </div>
+}
+@if (TempData["SuccessMessage"] is string ok)
+{
+    <div class="alert alert-success mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>@ok</span>
+    </div>
+}
+
+<style>
+    .start-ready {
+        animation: pulse 1.15s ease-in-out infinite;
+    }
+
+    @@keyframes pulse {
+        0% {
+            transform: scale(1)
+        }
+
+        50% {
+            transform: scale(1.02)
+        }
+
+        100% {
+            transform: scale(1)
+        }
+    }
+</style>
+
+<div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-5">
+    <div class="min-w-0">
+        <div class="flex items-center gap-3">
+            <h1 class="text-2xl font-bold truncate">@Model.Name</h1>
+
+            <span class="badge badge-lg px-4 py-3 @(isOwner ? "badge-success" : "badge-ghost")">
+                <span class="flex items-center gap-2">
+                    @if (isOwner)
+                    {
+                        <!-- crown -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8l3 4 4-7 4 7 3-4v11H5V8z" />
+                        </svg>
+                        <span>Host</span>
+                    }
+                    else
+                    {
+                        <!-- user -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span>Member</span>
+                    }
+                </span>
+            </span>
+        </div>
+
+        <div class="mt-2 text-sm opacity-70 flex items-center gap-2">
+            <!-- users -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" />
+            </svg>
+            <span>Players: <span id="playerCount" class="font-semibold">@playerCount</span> / 10</span>
+        </div>
+    </div>
+    <div class="flex items-center gap-2">
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- left: Players -->
+    <section class="lg:col-span-5">
+        <div class="card bg-base-100 border border-base-300 shadow-lg">
+            <div class="card-body p-6">
+
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-bold flex items-center gap-2">
+                        <!-- list -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+                        </svg>
+                        Player List
+                    </h2>
+
+                    <div class="badge badge-outline px-4 py-3">
+                        <span class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-success"></span>
+                            <span class="text-sm">Lobby open</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="divider my-4"></div>
+
+                <!-- player list -->
+                <div class="min-h-[60px]">
+                    <partial name="_PlayerListPartial" model="Model.Users" />
+                </div>
+
+                <div class="mt-5 flex justify-end">
+                    <form asp-action="Leave" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <button type="submit" class="btn btn-outline btn-error h-11 px-6 gap-2">
+                            <!-- door out -->
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5m0 0l-5-5m5 5H3" />
+                            </svg>
+                            Leave Lobby
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- right: match settings -->
+    <section class="lg:col-span-7">
+        <div class="card bg-base-100 border border-base-300 shadow-lg">
+            <div class="card-body p-6">
+
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <h2 class="text-lg font-bold flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m0 0v10m0 0a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2" />
+                            </svg>
+                            Match Settings
+                        </h2>
+                        <div class="text-xs opacity-70 mt-1">
+                            @if (isOwner)
+                            {
+                                <span>You control map and mode before start.</span>
+                            }
+                            else
+                            {
+                                <span>Host will choose settings before start.</span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="shrink-0">
+                        <span class="badge px-3 py-2 text-xs rounded-full whitespace-nowrap @(isOwner ? "badge-success" : "badge-ghost")">
+                            <span class="flex items-center gap-2">
+                                @if (isOwner)
+                                {
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8l3 4 4-7 4 7 3-4v11H5V8z" />
+                                    </svg>
+                                    <span>Host</span>
+                                }
+                                else
+                                {
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>Waiting</span>
+                                }
+                            </span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="divider my-4"></div>
+
+                <form asp-action="Start" method="post" id="startForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                        <!-- map -->
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.553-.832L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-1.553-.832L15 9m0 8V9m0 8l-6 3" />
+                                    </svg>
+                                    Map
+                                </span>
+                            </label>
+
+                            <select class="select select-bordered w-full h-12"
+                                    name="map"
+                                    id="mapSelect"
+                                    @(isOwner && !started ? null : "disabled")>
+                                @foreach (var m in maps)
+                                {
+                                    <option value="@m" selected="@(string.Equals(initialMap, m, StringComparison.OrdinalIgnoreCase))">
+                                        @m
+                                    </option>
+                                }
+                            </select>
+
+                            <label class="label">
+                                <span class="label-text-alt opacity-70">Choose a map.</span>
+                            </label>
+                        </div>
+
+                        <!-- mode -->
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text flex items-center gap-2">
+                                    <!-- sparkles -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3l1.5 4.5L11 9l-4.5 1.5L5 15l-1.5-4.5L-1 9l4.5-1.5L5 3zM16 8l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z" />
+                                    </svg>
+                                    Mode
+                                </span>
+                            </label>
+
+                            <select class="select select-bordered w-full h-12"
+                                    name="mode"
+                                    id="modeSelect"
+                                    @(isOwner && !started ? null : "disabled")>
+                                @foreach (var gm in Enum.GetValues(typeof(GameMode)).Cast<GameMode>())
+                                {
+                                    var val = (int)gm;
+                                    <option value="@val" selected="@(val == initialMode)">
+                                        @Humanize(gm.ToString())
+                                    </option>
+                                }
+                            </select>
+
+                            <label class="label">
+                                <span class="label-text-alt opacity-70">Choose a mode.</span>
+                            </label>
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+
+                                <button type="submit"
+                                        id="startBtn"
+                                        class="btn @(started ? "btn-primary" : "btn-success") h-12 px-8 gap-2 @(canStart ? "start-ready" : "")"
+                                        @(canStart ? null : (started ? null : "disabled"))
+                                        data-started="@(started.ToString().ToLower())">
+
+                                    @if (started)
+                                    {
+                                        <!-- plug -->
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 2v6m6-6v6m-7 4h8m-8 0a4 4 0 008 0m-8 0v3a4 4 0 004 4v3" />
+                                        </svg>
+                                        <span>Connect</span>
+                                    }
+                                    else
+                                    {
+                                        <!-- play -->
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-5.197-3.03A1 1 0 008 9.03v5.94a1 1 0 001.555.832l5.197-3.03a1 1 0 000-1.664z" />
+                                        </svg>
+                                        <span>Start</span>
+                                    }
+                                </button>
+
+                                <div class="text-sm opacity-70" id="startHint">
+                                    @if (started)
+                                    {
+                                        <span>Click Connect to join.</span>
+                                    }
+                                    else if (isOwner)
+                                    {
+                                        <span>@(playerCount >= 2 ? "Ready to go!" : "Waiting for more players…")</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Waiting for host…</span>
+                                    }
+                                </div>
+                            </div>
+
+                            <div id="preStartBoxes" class="mt-4 @(started ? "hidden" : "")">
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div class="stat bg-base-200 border border-base-300 rounded-2xl">
+                                        <div class="stat-figure opacity-70">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3l8 4v6c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V7l8-4z" />
+                                            </svg>
+                                        </div>
+                                        <div class="stat-title">Security</div>
+                                        <div class="stat-value text-base">Secured</div>
+                                        <div class="stat-desc">Anti-cheat enforced</div>
+                                    </div>
+
+                                    <div class="stat bg-base-200 border border-base-300 rounded-2xl">
+                                        <div class="stat-figure opacity-70">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                            </svg>
+                                        </div>
+                                        <div class="stat-title">Start rule</div>
+                                        <div class="stat-value text-base">2+ players</div>
+                                        <div class="stat-desc">Required to launch</div>
+                                    </div>
+
+                                    <div class="stat bg-base-200 border border-base-300 rounded-2xl">
+                                        <div class="stat-figure opacity-70">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                      d="M8 7h8M8 11h8M8 15h5M5 4h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" />
+                                            </svg>
+                                        </div>
+                                        <div class="stat-title">State</div>
+                                        <div class="stat-value text-base">Lobby</div>
+                                        <div class="stat-desc">Waiting to start</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- alert -->
+                            <div id="startedAlert" class="mt-4 @(started ? "" : "hidden")">
+                                <div class="alert alert-info">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
+                                    </svg>
+                                    <span id="startedAlertText">Secure match active. Click <span class="font-semibold">Connect</span> to join the match.</span>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </form>
+
+                <!-- hidden connect form -->
+                <form asp-action="Connect" method="post" id="connectForm" class="hidden">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                </form>
+
+            </div>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script src="https://unpkg.com/@@microsoft/signalr@8.0.7/dist/browser/signalr.min.js"></script>
+
+    <script>
+        (function () {
+            const lobbyId = @Model.Id;
+            const isOwner = @(isOwner.ToString().ToLower());
+            const started = @(started.ToString().ToLower());
+
+            const startForm     = document.getElementById('startForm');
+            const connectForm   = document.getElementById('connectForm');
+            const startBtn      = document.getElementById('startBtn');
+            const startHint     = document.getElementById('startHint');
+            const mapSelect     = document.getElementById('mapSelect');
+            const modeSelect    = document.getElementById('modeSelect');
+            const playerCountEl = document.getElementById('playerCount');
+
+            const preStartBoxes    = document.getElementById('preStartBoxes');
+            const startedAlert     = document.getElementById('startedAlert');
+            const startedAlertText = document.getElementById('startedAlertText');
+
+            const ICONS = {
+                connect: `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 2v6m6-6v6m-7 4h8m-8 0a4 4 0 008 0m-8 0v3a4 4 0 004 4v3" />
+                          </svg>`,
+                play: `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-5.197-3.03A1 1 0 008 9.03v5.94a1 1 0 001.555.832l5.197-3.03a1 1 0 000-1.664z" />
+                       </svg>`
+            };
+
+            function showStartedUI() {
+                preStartBoxes?.classList.add('hidden');
+                startedAlert?.classList.remove('hidden');
+
+                if (startedAlertText) {
+                    startedAlertText.innerHTML =
+                        `Secure match active. Click <span class="font-semibold">Connect</span> to join the match.`;
+                }
+            }
+
+            function flipToConnect(infoText) {
+                mapSelect?.setAttribute('disabled', 'disabled');
+                modeSelect?.setAttribute('disabled', 'disabled');
+
+                if (startBtn) {
+                    startBtn.dataset.started = 'true';
+                    startBtn.disabled = false;
+
+                    startBtn.classList.remove('btn-success', 'start-ready');
+                    startBtn.classList.add('btn-primary');
+
+                    startBtn.type = 'button';
+                    startBtn.innerHTML = `${ICONS.connect}<span>Connect</span>`;
+
+                    startBtn.onclick = async () => {
+                        if (!connectForm) return;
+
+                        startBtn.disabled = true;
+                        if (startHint) startHint.textContent = "Sending connect request...";
+
+                        try {
+                            await fetch(connectForm.action, {
+                                method: "POST",
+                                body: new FormData(connectForm),
+                                credentials: "same-origin"
+                            });
+
+                            window.location.href = `/Lobbies/View?id=${encodeURIComponent(lobbyId)}`;
+                        } catch (err) {
+                            console.error(err);
+                            startBtn.disabled = false;
+                            if (startHint) startHint.textContent = "Failed to contact server. Try again.";
+                        }
+                    };
+                }
+
+                if (startHint) startHint.textContent = infoText || "Click Connect to join.";
+                showStartedUI();
+            }
+
+            if (started) {
+                flipToConnect("Click Connect to join.");
+            }
+
+            const connection = new signalR.HubConnectionBuilder()
+                .withUrl('/hubs/lobbies')
+                .withAutomaticReconnect()
+                .build();
+
+            connection.start()
+                .then(() => connection.invoke('JoinLobby', lobbyId))
+                .catch(console.error);
+
+            function antiForgery() {
+                return startForm
+                    ?.querySelector('input[name="__RequestVerificationToken"]')
+                    ?.value || '';
+            }
+
+            async function saveSelection() {
+                try {
+                    const fd = new FormData();
+                    fd.append('id', String(lobbyId));
+                    fd.append('map', mapSelect.value);
+                    fd.append('mode', modeSelect.value);
+                    fd.append('__RequestVerificationToken', antiForgery());
+
+                    await fetch('@Url.Action("SaveSelection", "Lobbies")', {
+                        method: 'POST',
+                        body: fd,
+                        credentials: 'same-origin'
+                    });
+                } catch {}
+            }
+
+            if (isOwner && !started) {
+                const sendMap = () => {
+                    connection.invoke('MapPreview', lobbyId, mapSelect.value);
+                    saveSelection();
+                };
+                const sendMode = () => {
+                    const mode = parseInt(modeSelect.value, 10);
+                    connection.invoke('ModeChanged', lobbyId, mode);
+                    saveSelection();
+                };
+
+                mapSelect?.addEventListener('input', sendMap);
+                mapSelect?.addEventListener('change', sendMap);
+                modeSelect?.addEventListener('change', sendMode);
+            }
+
+            connection.on('ReceiveMapPreview', (map) => {
+                if (!isOwner && mapSelect) mapSelect.value = map;
+            });
+
+            connection.on('ReceiveModeChanged', (mode) => {
+                if (!isOwner && modeSelect) modeSelect.value = String(mode);
+            });
+
+            function syncStartButton(count) {
+                const startedNow = (startBtn?.dataset.started === 'true');
+                if (!isOwner || startedNow) return;
+
+                const canStartNow = count >= 2;
+
+                if (startBtn) {
+                    startBtn.disabled = !canStartNow;
+                    startBtn.classList.toggle('start-ready', canStartNow);
+                    startBtn.type = 'submit';
+                    startBtn.onclick = null;
+
+                    startBtn.classList.remove('btn-primary');
+                    startBtn.classList.add('btn-success');
+                    startBtn.innerHTML = `${ICONS.play}<span>Start</span>`;
+                }
+
+                if (startHint) startHint.textContent = canStartNow ? "Ready to go!" : "Waiting for more players…";
+            }
+
+            syncStartButton(parseInt(playerCountEl?.innerText || '0', 10));
+
+            connection.on('ReceivePlayersChanged', (count) => {
+                if (playerCountEl) playerCountEl.innerText = String(count);
+                syncStartButton(parseInt(count, 10));
+            });
+
+            connection.on('ReceivePlayerList', (html) => {
+                const current = document.getElementById('playerList');
+                if (!current || !html) return;
+                current.outerHTML = html;
+            });
+
+            connection.on('LobbyClosed', (reason) => {
+                if (isOwner) return;
+                alert(reason || "The lobby has been closed by the host.");
+                window.location.href = '/Lobbies';
+            });
+
+            connection.on('ReceiveMatchStarted', () => {
+                flipToConnect("Click Connect to join.");
+            });
+
+            connection.on("MatchEnded", (endedLobbyId) => {
+                if (endedLobbyId !== lobbyId) return;
+                window.location.reload();
+            });
+
+            if (startForm && isOwner && !started) {
+                startForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+
+                    const count = parseInt(playerCountEl?.innerText || '0', 10);
+                    if (count < 2) return;
+
+                    const fd = new FormData(startForm);
+                    startBtn?.setAttribute('disabled', 'disabled');
+
+                    try {
+                        const res = await fetch(startForm.action, {
+                            method: 'POST',
+                            body: fd,
+                            credentials: 'same-origin',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+
+                        if (!res.ok) throw new Error('Start failed');
+                    } catch (err) {
+                        console.error(err);
+                        startBtn?.removeAttribute('disabled');
+                    }
+                });
+            }
+        })();
+    </script>
+}

@@ -1,0 +1,8 @@
+Debugger detection
+Remote debugger detection
+Module scanning
+Module whitelist
+System module detection
+.text section integrity scan (CRC32)
+Baseline .text CRC comparison
+Continuous monitoring thread

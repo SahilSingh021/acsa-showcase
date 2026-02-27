@@ -1,0 +1,77 @@
+﻿@model acsa_web.Models.ViewModels.LobbyItemVm
+
+<div class="w-full rounded-2xl border border-base-300 bg-base-100 hover:bg-base-200/30 hover:border-base-content/15 transition"
+     data-lobby-id="@Model.Id">
+    <div class="px-5 py-3">
+        <div class="flex items-center justify-between gap-4">
+
+            <div class="min-w-0">
+                <div class="flex items-center gap-2 min-w-0">
+                    <div class="text-base font-bold truncate">@Model.Name</div>
+
+                    @if (Model.IsFull)
+                    {
+                        <span class="badge badge-error badge-outline gap-1 shrink-0">Full</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge-success badge-outline gap-2 shrink-0">
+                            <span class="w-2 h-2 rounded-full bg-success"></span>
+                            Open
+                        </span>
+                    }
+                </div>
+
+                <div class="mt-1 text-xs opacity-70 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span class="truncate"><span class="font-medium">@Model.OwnerUserName</span></span>
+                </div>
+            </div>
+
+            <div class="shrink-0 flex items-center gap-3">
+                <div class="px-3 h-8 flex items-center rounded-full border border-base-300 bg-base-200 text-xs">
+                    <span class="font-semibold">@Model.PlayerCount</span>
+                    <span class="opacity-70">/@Model.MaxPlayers</span>
+                </div>
+
+                @if (Model.IsMember)
+                {
+                    <a asp-action="View"
+                       asp-route-id="@Model.Id"
+                       class="btn btn-primary h-9 min-h-0 px-5 rounded-full gap-2 normal-case font-semibold">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                        View
+                    </a>
+                }
+                else if (Model.InAnotherLobby)
+                {
+                    <button type="button"
+                            class="btn h-9 min-h-0 px-5 rounded-full gap-2 opacity-60"
+                            disabled
+                            title="You are already in another lobby">
+                        Join
+                    </button>
+                }
+                else
+                {
+                    <form asp-action="Join" method="post" class="m-0">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <button type="submit"
+                                class="btn @(Model.IsFull ? "btn-disabled" : "btn-success") h-9 min-h-0 px-5 rounded-full gap-2 normal-case font-semibold"
+                                @(Model.IsFull ? "disabled" : null)>
+                            Join
+                        </button>
+                    </form>
+                }
+            </div>
+
+        </div>
+    </div>
+</div>

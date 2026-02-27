@@ -1,0 +1,161 @@
+﻿@model acsa_web.Models.ViewModels.LobbyListVm
+@{
+    ViewData["Title"] = "Lobbies";
+}
+
+@* Alerts *@
+@if (TempData["ErrorMessage"] is string err)
+{
+    <div class="alert alert-error mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86l-7.4 13.2A2 2 0 004.63 20h14.74a2 2 0 001.74-2.94l-7.4-13.2a2 2 0 00-3.42 0z" />
+        </svg>
+        <span>@err</span>
+    </div>
+}
+@if (TempData["SuccessMessage"] is string ok)
+{
+    <div class="alert alert-success mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>@ok</span>
+    </div>
+}
+
+<div class="flex items-center justify-between mb-4">
+    <h1 class="text-2xl font-bold">Lobbies</h1>
+    <label for="createLobbyModal" class="btn btn-primary h-12 px-6 gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        Create Lobby
+    </label>
+</div>
+
+<div id="lobbyListContainer"  class="w-full">
+    @if (!Model.Lobbies.Any())
+    {
+        <div class="alert alert-info">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
+            </svg>
+            <span>No lobbies yet. Be the first to create one!</span>
+        </div>
+    }
+    else
+    {
+        <div class="flex flex-col gap-4 w-full">
+            @foreach (var lobby in Model.Lobbies)
+            {
+                <partial name="_LobbyCardPartial" model="lobby" />
+            }
+        </div>
+    }
+</div>
+
+<input type="checkbox" id="createLobbyModal" class="modal-toggle" />
+<div class="modal" role="dialog">
+    <div class="modal-box border border-base-300">
+        <div class="flex items-center justify-between gap-4">
+            <h3 class="font-bold text-lg">Create Lobby</h3>
+            <label for="createLobbyModal" class="btn btn-sm btn-circle btn-ghost">✕</label>
+        </div>
+
+        <form asp-action="Create" method="post" class="mt-4 space-y-4">
+            @Html.AntiForgeryToken()
+
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Lobby Name</span>
+                </label>
+                <input type="text"
+                       name="Name"
+                       class="input input-bordered w-full h-12"
+                       maxlength="50"
+                       required
+                       pattern="^\S{1,50}$"
+                       title="No spaces allowed. Max 50 characters."
+                       oninput="this.value = this.value.replace(/\s+/g,'');"
+                       placeholder="e.g. RankedEU#1" />
+            </div>
+
+            <div class="modal-action">
+                <label for="createLobbyModal" class="btn btn-ghost h-12 px-6">Cancel</label>
+                <button type="submit" class="btn btn-primary h-12 px-8 gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Create
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <label class="modal-backdrop" for="createLobbyModal">Close</label>
+</div>
+
+@section Scripts {
+    <script src="https://unpkg.com/@@microsoft/signalr@8.0.7/dist/browser/signalr.min.js"></script>
+
+    <script>
+        (function() {
+            const connection = new signalR.HubConnectionBuilder()
+                .withUrl('/hubs/lobbies')
+                .withAutomaticReconnect()
+                .build();
+
+            connection.start()
+                .then(() => console.log("Connected to lobby hub"))
+                .catch(err => console.error("SignalR failed:", err));
+
+            connection.on('ReceiveLobbyList', (html) => {
+                const container = document.getElementById('lobbyListContainer');
+                if (container) container.innerHTML = html;
+            });
+
+            connection.on('LobbyListChanged', async () => {
+                try {
+                    const res = await fetch('@Url.Action("ListPartial", "Lobbies")', { cache: "no-store" });
+                    if (!res.ok) return;
+                    const html = await res.text();
+                    const container = document.getElementById('lobbyListContainer');
+                    if (container) container.innerHTML = html;
+                } catch {}
+            });
+
+            connection.on('LobbyUpdated', (lobbyId, playerCount) => {
+                const card = document.querySelector(`[data-lobby-id='${lobbyId}']`);
+                if (!card) return;
+
+                const playerCountElem = card.querySelector('.player-count');
+                if (playerCountElem) playerCountElem.textContent = playerCount + "/10";
+            });
+
+            setInterval(async () => {
+                try {
+                    const res = await fetch('@Url.Action("ListPartial", "Lobbies")', { cache: "no-store" });
+                    if (!res.ok) return;
+                    const html = await res.text();
+                    const container = document.getElementById('lobbyListContainer');
+                    if (container) container.innerHTML = html;
+                } catch {}
+            }, 5000);
+        })();
+    </script>
+
+    @if (ViewBag.OpenCreate is true)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const cb = document.getElementById("createLobbyModal");
+                if (cb) cb.checked = true;
+
+                // remove ?openCreate=1 so refresh doesn't reopen
+                const url = new URL(window.location.href);
+                url.searchParams.delete("openCreate");
+                window.history.replaceState({}, "", url.toString());
+            });
+        </script>
+    }
+}

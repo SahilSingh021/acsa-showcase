@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.2.11430.68 d18.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "acsa-web", "acsa-web\acsa-web.csproj", "{985E550B-135F-47E4-8EE4-DA609DD8A442}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{985E550B-135F-47E4-8EE4-DA609DD8A442}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{985E550B-135F-47E4-8EE4-DA609DD8A442}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{985E550B-135F-47E4-8EE4-DA609DD8A442}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{985E550B-135F-47E4-8EE4-DA609DD8A442}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7760E866-9430-40F3-B57C-2F3B8CC91522}
+	EndGlobalSection
+EndGlobal

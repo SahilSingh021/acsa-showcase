@@ -1,0 +1,190 @@
+﻿@model List<acsa_web.Models.ViewModels.LeaderboardEntryVm>
+@{
+    ViewData["Title"] = "Global Leaderboard";
+}
+
+@if (TempData["ErrorMessage"] is string err)
+{
+    <div class="alert alert-error mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86l-7.4 13.2A2 2 0 004.63 20h14.74a2 2 0 001.74-2.94l-7.4-13.2a2 2 0 00-3.42 0z" />
+        </svg>
+        <span>@err</span>
+    </div>
+}
+@if (TempData["SuccessMessage"] is string ok)
+{
+    <div class="alert alert-success mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>@ok</span>
+    </div>
+}
+
+<div class="flex items-center justify-between mb-4">
+    <h1 class="text-2xl font-bold">Global Leaderboard</h1>
+
+    <a href="@Url.Action("Index", "Leaderboard")" class="btn btn-ghost h-12 px-5 gap-2" title="Refresh">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M20 8a8 8 0 00-14.9-3M4 16a8 8 0 0014.9 3" />
+        </svg>
+        Refresh
+    </a>
+</div>
+
+@{
+    var rows = (Model ?? new List<acsa_web.Models.ViewModels.LeaderboardEntryVm>()).Take(10).ToList();
+    var totalPlayers = rows.Count;
+    var top = rows.FirstOrDefault();
+}
+
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <section class="lg:col-span-9">
+        <div class="card bg-base-100 border border-base-300 shadow-lg">
+            <div class="card-body p-6">
+
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-bold flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+                        </svg>
+                        Top Players
+                    </h2>
+
+                    <div class="badge badge-outline px-4 py-3">
+                        <span class="text-sm">All-time • Top 10</span>
+                    </div>
+                </div>
+
+                <div class="divider my-4"></div>
+
+                <div id="leaderboardContainer" class="w-full">
+                    @if (!rows.Any())
+                    {
+                        <div class="alert alert-info">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
+                            </svg>
+                            <span>No matches recorded yet.</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="overflow-x-auto">
+                            <table class="table table-zebra w-full">
+                                <thead>
+                                    <tr>
+                                        <th class="w-14 text-center">#</th>
+                                        <th>Player</th>
+                                        <th class="text-right">K/D</th>
+                                        <th class="text-right">Kills</th>
+                                        <th class="text-right">Deaths</th>
+                                        <th class="text-right">Flags</th>
+                                        <th class="text-right">Time Played</th>
+                                        <th class="text-right">Last Played (GMT)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var row in rows)
+                                    {
+                                        <tr class="hover">
+                                            <td class="text-center">
+                                                @if (row.Rank == 1)
+                                                {
+                                                    <span class="badge badge-warning px-3 py-2 gap-2" title="1st">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2l2.2 6.8H21l-5.6 4 2.1 6.7L12 15.8 6.5 19.5 8.6 12.8 3 8.8h6.8L12 2z" />
+                                                        </svg>
+                                                        1
+                                                    </span>
+                                                }
+                                                else if (row.Rank == 2)
+                                                {
+                                                    <span class="badge badge-neutral px-3 py-2 gap-2" title="2nd">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2l2.2 6.8H21l-5.6 4 2.1 6.7L12 15.8 6.5 19.5 8.6 12.8 3 8.8h6.8L12 2z" />
+                                                        </svg>
+                                                        2
+                                                    </span>
+                                                }
+                                                else if (row.Rank == 3)
+                                                {
+                                                    <span class="badge badge-accent px-3 py-2 gap-2" title="3rd">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2l2.2 6.8H21l-5.6 4 2.1 6.7L12 15.8 6.5 19.5 8.6 12.8 3 8.8h6.8L12 2z" />
+                                                        </svg>
+                                                        3
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="opacity-70 font-semibold">@row.Rank</span>
+                                                }
+                                            </td>
+
+                                            <td class="min-w-[220px]">
+                                                <span class="font-semibold">@row.UserName</span>
+                                            </td>
+
+                                            <td class="text-right font-semibold">@row.KdRatio</td>
+                                            <td class="text-right">@row.Kills</td>
+                                            <td class="text-right">@row.Deaths</td>
+                                            <td class="text-right">@(row.TotalFlagsCaptured == null ? "-" : row.TotalFlagsCaptured)</td>
+                                            <td class="text-right">@row.TotalTimePretty</td>
+                                            <td class="text-right">
+                                                @(row.LastPlayed.HasValue? row.LastPlayed.Value.ToString("yyyy-MM-dd HH:mm") : "—")
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <aside class="lg:col-span-3">
+        <div class="card bg-base-100 border border-base-300 shadow-lg">
+            <div class="card-body p-6">
+                <h3 class="font-bold flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Snapshot
+                </h3>
+
+                <div class="divider my-4"></div>
+
+                <div class="stats stats-vertical w-full bg-base-200 border border-base-300 rounded-2xl">
+                    <div class="stat">
+                        <div class="stat-title">Players Ranked</div>
+                        <div class="stat-value text-base">@totalPlayers</div>
+                        <div class="stat-desc">Top 10 shown</div>
+                    </div>
+
+                    <div class="stat">
+                        <div class="stat-title">#1 Player</div>
+                        <div class="stat-value text-base truncate">@((top?.UserName) ?? "—")</div>
+                        <div class="stat-desc">
+                            K/D @(top != null ? top.KdRatio.ToString() : "—") • Kills @(top != null ? top.Kills.ToString() : "—")
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 text-xs uppercase tracking-wider opacity-50">
+                    Sorting
+                </div>
+
+                <div class="mt-1 text-sm text-base-content/70">
+                    Ordered by <span class="font-semibold">K/D</span>,
+                    then <span class="font-semibold">Kills</span>
+                </div>
+            </div>
+        </div>
+    </aside>
+</div>

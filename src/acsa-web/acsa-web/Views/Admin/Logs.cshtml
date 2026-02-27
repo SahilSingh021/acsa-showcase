@@ -1,0 +1,252 @@
+﻿@using acsa_web.Models
+@model acsa_web.Models.ViewModels.AdminLogsVm
+
+@{
+    ViewData["Title"] = "Admin Logs";
+
+    var logs = Model.Logs ?? new List<AdminLog>();
+
+    int total = logs.Count;
+    int cntInfo = logs.Count(x => x.Level == AdminLogLevel.Info);
+    int cntUpd = logs.Count(x => x.Level == AdminLogLevel.Update);
+    int cntWarn = logs.Count(x => x.Level == AdminLogLevel.Warning);
+    int cntErr = logs.Count(x => x.Level == AdminLogLevel.Error);
+
+    string LevelChip(AdminLogLevel lvl) => lvl switch
+    {
+        AdminLogLevel.Info => "badge badge-outline",
+        AdminLogLevel.Update => "badge badge-neutral",
+        AdminLogLevel.Warning => "badge badge-warning badge-outline",
+        AdminLogLevel.Error => "badge badge-error badge-outline",
+        _ => "badge badge-outline"
+    };
+
+    string LevelDot(AdminLogLevel lvl) => lvl switch
+    {
+        AdminLogLevel.Info => "bg-base-content/40",
+        AdminLogLevel.Update => "bg-base-content/70",
+        AdminLogLevel.Warning => "bg-warning",
+        AdminLogLevel.Error => "bg-error",
+        _ => "bg-base-content/40"
+    };
+}
+
+<style>
+    .mh-scroll {
+        overflow: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+        .mh-scroll::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+        }
+</style>
+
+@if (TempData["ErrorMessage"] is string err)
+{
+    <div class="alert alert-error mb-4"><span>@err</span></div>
+}
+@if (TempData["SuccessMessage"] is string ok)
+{
+    <div class="alert alert-success mb-4"><span>@ok</span></div>
+}
+
+<!-- header -->
+<div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-4">
+    <div class="min-w-0">
+        <h1 class="text-2xl font-bold">Admin Logs</h1>
+        <div class="text-sm opacity-70 mt-1">Audit trail of admin actions across the site.</div>
+
+        <div class="mt-3 flex flex-wrap gap-2 text-xs">
+            <span class="badge badge-outline">Total <span class="ml-1 font-semibold">@total</span></span>
+            <span class="badge badge-outline">Info <span class="ml-1 font-semibold">@cntInfo</span></span>
+            <span class="badge badge-neutral">Update <span class="ml-1 font-semibold">@cntUpd</span></span>
+            <span class="badge badge-warning badge-outline">Warning <span class="ml-1 font-semibold">@cntWarn</span></span>
+            <span class="badge badge-error badge-outline">Error <span class="ml-1 font-semibold">@cntErr</span></span>
+        </div>
+    </div>
+
+    <a class="btn btn-outline h-11 gap-2" href="@Url.Action("Logs", "Admin")">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 4v6h6M20 20v-6h-6M20 9a8 8 0 00-14.9-3M4 15a8 8 0 0014.9 3" />
+        </svg>
+        Refresh
+    </a>
+</div>
+
+<!-- filters -->
+<div class="card bg-base-100 border border-base-300 shadow-sm mb-4">
+    <div class="card-body p-4">
+        <form method="get" class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-end">
+            <div class="lg:col-span-7 form-control">
+                <label class="label pb-1"><span class="label-text">Search</span></label>
+                <input name="q" value="@Model.Q" class="input input-bordered h-11 w-full"
+                       placeholder="Search actions… (banned, email, reset, etc.)" />
+            </div>
+
+            <div class="lg:col-span-3 form-control">
+                <label class="label pb-1"><span class="label-text">Level</span></label>
+                <select name="level" class="select select-bordered h-11 w-full">
+                    <option value="">All</option>
+                    @foreach (var lvl in Enum.GetValues(typeof(AdminLogLevel)).Cast<AdminLogLevel>())
+                    {
+                        <option value="@lvl" selected="@(Model.Level == lvl)">@lvl</option>
+                    }
+                </select>
+            </div>
+
+            <div class="lg:col-span-1 form-control">
+                <label class="label pb-1"><span class="label-text">Show</span></label>
+                <select name="take" class="select select-bordered h-11 w-full">
+                    @{
+                        int[] opts = new[] { 50, 100, 200, 500, 1000 };
+                        foreach (var t in opts)
+                        {
+                            <option value="@t" selected="@(Model.Take == t)">@t</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="lg:col-span-1">
+                <button class="btn btn-primary h-11 w-full" type="submit">Apply</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (!logs.Any())
+{
+    <div class="alert alert-info"><span>No admin logs found for these filters.</span></div>
+}
+else
+{
+    <!-- audit table -->
+    <div class="card bg-base-100 border border-base-300 shadow-sm">
+        <div class="card-body p-0">
+            <div class="overflow-x-auto">
+                <div class="mh-scroll rounded-2xl border border-transparent max-h-[600px]">
+
+                    <table class="table w-full">
+                        <thead class="text-xs uppercase opacity-70 bg-base-100">
+                            <tr>
+                                <th class="w-[220px]">Time</th>
+                                <th class="w-[140px]">Level</th>
+                                <th>Message</th>
+                                <th class="w-[110px] text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var log in logs)
+                            {
+                                var local = log.CreatedAt.ToLocalTime();
+                                var localStr = local.ToString("dd MMM yyyy, HH:mm:ss");
+                                var utcStr = log.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss") + "Z";
+                                var lvl = log.Level;
+                                var msg = (log.Message ?? "").Trim();
+
+                                // format: UTC + Local + Level + Message
+                                var copy = $"{utcStr} | {localStr} | {lvl.ToString().ToUpperInvariant()} | {msg}";
+
+                                <tr class="hover">
+                                    <td class="font-mono text-xs whitespace-nowrap">
+                                        <div class="flex flex-col">
+                                            <span class="rel opacity-70" data-utc="@log.CreatedAt.ToString("O")"></span>
+                                            <span>@localStr</span>
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-2 h-2 rounded-full @LevelDot(lvl)"></span>
+                                            <span class="@LevelChip(lvl)">@lvl</span>
+                                        </div>
+                                    </td>
+
+                                    <td class="max-w-[900px]">
+                                        <div class="text-sm break-words">
+                                            @msg
+                                        </div>
+                                    </td>
+
+                                    <td class="text-right">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline copy-btn"
+                                                data-copy="@copy">
+                                            Copy
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+
+                </div>
+            </div>
+
+            <div class="px-4 py-3 border-t border-base-300 text-xs opacity-60">
+                Showing @logs.Count logs (limit @Model.Take).
+            </div>
+
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        function relTimeFromUtc(utcIso) {
+            const dt = new Date(utcIso);
+            const now = new Date();
+            const diff = Math.floor((now - dt) / 1000);
+
+            if (diff < 5) return "just now";
+            if (diff < 60) return diff + "s ago";
+            const mins = Math.floor(diff / 60);
+            if (mins < 60) return mins + "m ago";
+            const hrs = Math.floor(mins / 60);
+            if (hrs < 24) return hrs + "h ago";
+            const days = Math.floor(hrs / 24);
+            return days + "d ago";
+        }
+
+        function refreshRel() {
+            document.querySelectorAll(".rel").forEach(el => {
+                const iso = el.getAttribute("data-utc");
+                if (!iso) return;
+                el.textContent = relTimeFromUtc(iso);
+            });
+        }
+
+        refreshRel();
+        setInterval(refreshRel, 60 * 1000);
+
+        document.querySelectorAll(".copy-btn").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                const text = btn.getAttribute("data-copy") || "";
+                try {
+                    await navigator.clipboard.writeText(text);
+                } catch {
+                    const ta = document.createElement("textarea");
+                    ta.value = text;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(ta);
+                }
+
+                const old = btn.textContent;
+                btn.classList.remove("btn-outline");
+                btn.classList.add("btn-success");
+                btn.textContent = "Copied";
+                setTimeout(() => {
+                    btn.classList.remove("btn-success");
+                    btn.classList.add("btn-outline");
+                    btn.textContent = old;
+                }, 900);
+            });
+        });
+    </script>
+}

@@ -1,0 +1,249 @@
+﻿@model acsa_web.Models.ViewModels.PlayerMatchHistoryVm
+
+@{
+    ViewData["Title"] = "Match History";
+
+    string KdClass(double kd) =>
+        kd >= 1.5 ? "text-success" :
+        kd >= 1.0 ? "text-warning" :
+        "text-error";
+
+    string TitleCase(string s)
+    {
+        if (string.IsNullOrWhiteSpace(s)) return "—";
+        return System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(s);
+    }
+}
+
+<style>
+    .mh-card {
+        transition: all .18s ease;
+    }
+
+        .mh-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(0,0,0,.25);
+        }
+
+    .mh-row {
+        transition: transform .12s ease, background .12s ease;
+    }
+
+        .mh-row:hover {
+            transform: scale(1.01);
+        }
+
+    .mh-scroll {
+        overflow: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+        .mh-scroll::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+        }
+</style>
+
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-bold">Match History</h1>
+        <div class="text-sm opacity-60 mt-1">
+            Performance overview and recent matches
+        </div>
+    </div>
+
+    <a href="@Url.Action("History", "Players", new { username = Model.UserName })"
+       class="btn btn-ghost h-12 px-5 gap-2"
+       title="Refresh">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="h-5 w-5"
+             fill="none"
+             viewBox="0 0 24 24"
+             stroke="currentColor">
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 4v6h6M20 20v-6h-6M20 8a8 8 0 00-14.9-3M4 16a8 8 0 0014.9 3" />
+        </svg>
+        Refresh
+    </a>
+</div>
+
+@{
+    var matches = Model.Matches ?? new List<acsa_web.Models.ViewModels.PlayerMatchHistoryVm.MatchRow>();
+    var last = matches.FirstOrDefault();
+    var kd = Model.KdRatio;
+
+    var best = matches
+        .OrderByDescending(x => x.Kills)
+        .ThenBy(x => x.Deaths)
+        .FirstOrDefault();
+
+    var hottestMap = matches
+        .GroupBy(x => x.Map ?? "")
+        .OrderByDescending(g => g.Count())
+        .Select(g => new { Map = g.Key, Count = g.Count() })
+        .FirstOrDefault();
+
+    var totalMinutes = (int)System.TimeSpan.FromMilliseconds(Model.TotalTimeMs).TotalMinutes;
+    var kpm = totalMinutes > 0 ? (double)Model.TotalKills / totalMinutes : 0.0;
+}
+
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+    <!-- top stats -->
+    <section class="xl:col-span-12">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+            <div class="card bg-base-100 border border-base-300 shadow-lg mh-card">
+                <div class="card-body p-5">
+                    <div class="text-sm opacity-60">Matches</div>
+                    <div class="text-3xl font-extrabold mt-1">@Model.TotalMatches</div>
+                    <div class="text-xs opacity-50 mt-1">
+                        @(last != null ? $"Last: {last.EndedAt:yyyy-MM-dd HH:mm} (GMT)" : "No matches yet")
+                    </div>
+                </div>
+            </div>
+
+            <div class="card bg-base-100 border border-base-300 shadow-lg mh-card">
+                <div class="card-body p-5">
+                    <div class="text-sm opacity-60">K/D Ratio</div>
+                    <div class="text-3xl font-extrabold mt-1">
+                        <span class="@KdClass(kd)">@kd</span>
+                    </div>
+                    <div class="text-xs opacity-50 mt-1">
+                        @Model.TotalKills K • @Model.TotalDeaths D
+                    </div>
+                </div>
+            </div>
+
+            <div class="card bg-base-100 border border-base-300 shadow-lg mh-card">
+                <div class="card-body p-5">
+                    <div class="text-sm opacity-60">Time Played</div>
+                    <div class="text-3xl font-extrabold mt-1">@Model.TotalTimePretty</div>
+                    <div class="text-xs opacity-50 mt-1">
+                        KPM @Math.Round(kpm, 2)
+                    </div>
+                </div>
+            </div>
+
+            <div class="card bg-base-100 border border-base-300 shadow-lg mh-card">
+                <div class="card-body p-5">
+                    <div class="text-sm opacity-60">Flags</div>
+                    <div class="text-3xl font-extrabold mt-1">@Model.TotalFlagsCaptured</div>
+                    <div class="text-xs opacity-50 mt-1">
+                        @(hottestMap != null ? $"{hottestMap.Map} ({hottestMap.Count})" : "—")
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- recent matches -->
+    <section class="xl:col-span-8">
+        <div class="card bg-base-100 border border-base-300 shadow-lg">
+            <div class="card-body p-6">
+
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold">Recent Matches</h2>
+                    <div class="text-sm text-base-content/60">Newest first</div>
+                </div>
+
+                @if (!matches.Any())
+                {
+                    <div class="alert alert-info">No matches found.</div>
+                }
+                else
+                {
+                    <div class="mh-scroll rounded-2xl border border-transparent max-h-[500px]">
+
+                        <table class="table table-zebra w-full">
+                            <thead class="text-xs uppercase opacity-60">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Map</th>
+                                    <th>Mode</th>
+                                    <th class="text-right">K</th>
+                                    <th class="text-right">D</th>
+                                    <th class="text-right">Flags</th>
+                                    <th class="text-right">Length</th>
+                                    <th class="text-right">Ended (GMT)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var m in matches)
+                                {
+                                    <tr class="mh-row">
+                                        <td class="font-semibold">#@m.MatchId</td>
+                                        <td>@m.Map</td>
+                                        <td class="max-w-[120px] sm:max-w-none">
+                                            <span class="inline-block px-3 py-1 text-xs font-medium rounded-full bg-base-200 border border-base-300 whitespace-nowrap overflow-hidden text-ellipsis max-w-full">
+                                                @TitleCase(m.Mode)
+                                            </span>
+                                        </td>
+                                        <td class="text-right font-semibold">@m.Kills</td>
+                                        <td class="text-right">@m.Deaths</td>
+                                        <td class="text-right">@(m.Flags == null ? "-" : m.Flags)</td>
+                                        <td class="text-right">@m.LengthPretty</td>
+                                        <td class="text-right">
+                                            @m.EndedAt.ToString("yyyy-MM-dd HH:mm")
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+
+                    </div>
+                }
+
+            </div>
+        </div>
+    </section>
+
+    <!-- highlights -->
+    <section class="xl:col-span-4">
+        <div class="card bg-base-100 border border-base-300 shadow-lg">
+            <div class="card-body p-6">
+
+                <h2 class="text-lg font-bold mb-4">Highlights</h2>
+
+                <div class="space-y-4">
+
+                    <div class="alert bg-base-200 border border-base-300">
+                        <div>
+                            <div class="font-semibold">Best match</div>
+                            <div class="text-sm opacity-60">
+                                @(best != null
+                                                                ? $"#{best.MatchId} • {best.Map} • {best.Kills} K"
+                                                                : "—")
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert bg-base-200 border border-base-300">
+                        <div>
+                            <div class="font-semibold">Most played map</div>
+                            <div class="text-sm opacity-60">
+                                @(hottestMap != null
+                                                                ? $"{hottestMap.Map} • {hottestMap.Count} matches"
+                                                                : "—")
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert bg-base-200 border border-base-300">
+                        <div>
+                            <div class="font-semibold">Objective focus</div>
+                            <div class="text-sm opacity-60">
+                                Flags captured: @Model.TotalFlagsCaptured
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </section>
+</div>

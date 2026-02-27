@@ -1,0 +1,43 @@
+﻿@{
+    Layout = "/Views/Shared/_Layout.cshtml";
+}
+
+<div class="max-w-6xl mx-auto px-4 sm:px-0">
+
+    <div class="py-4">
+        <div class="flex items-center justify-between gap-3">
+            <div class="min-w-0">
+                <h1 class="text-xl font-bold">Manage your account</h1>
+                <p class="text-sm opacity-70">Change your account settings</p>
+            </div>
+
+            <div class="badge badge-outline px-4 py-2 hidden sm:flex">
+                <span class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-success"></span>
+                    <span class="text-sm">Secured</span>
+                </span>
+            </div>
+        </div>
+
+        <div class="divider my-5"></div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- nav -->
+            <aside class="lg:col-span-4">
+                <div class="bg-base-200 border border-base-300 rounded-2xl p-3">
+                    <partial name="_ManageNav" />
+                </div>
+            </aside>
+
+            <!-- content -->
+            <section class="lg:col-span-8 min-w-0">
+                @RenderBody()
+            </section>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    @RenderSection("Scripts", required: false)
+}

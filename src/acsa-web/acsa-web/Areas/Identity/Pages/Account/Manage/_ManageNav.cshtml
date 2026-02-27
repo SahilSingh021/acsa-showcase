@@ -1,0 +1,22 @@
+﻿@using Microsoft.AspNetCore.Identity
+@inject SignInManager<ApplicationUser> SignInManager
+
+@{
+    var hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();
+
+    string LinkClass(string navClass) =>
+        string.IsNullOrWhiteSpace(navClass)
+            ? "flex items-center px-3 py-2 rounded-xl hover:bg-base-100 transition"
+            : "flex items-center px-3 py-2 rounded-xl bg-primary/15 text-primary font-semibold border border-primary/25";
+}
+
+<ul class="flex flex-col gap-1">
+    <li><a id="profile" asp-page="./Index" class="@LinkClass(ManageNavPages.IndexNavClass(ViewContext))">Profile</a></li>
+    <li><a id="email" asp-page="./Email" class="@LinkClass(ManageNavPages.EmailNavClass(ViewContext))">Email</a></li>
+    <li><a id="change-password" asp-page="./ChangePassword" class="@LinkClass(ManageNavPages.ChangePasswordNavClass(ViewContext))">Password</a></li>
+
+    @if (hasExternalLogins)
+    {
+        <li><a id="external-login" asp-page="./ExternalLogins" class="@LinkClass(ManageNavPages.ExternalLoginsNavClass(ViewContext))">External logins</a></li>
+    }
+</ul>

@@ -1,0 +1,26 @@
+﻿@model IEnumerable<acsa_web.Models.LobbyUser>
+
+<ul class="space-y-2" id="playerList">
+    @foreach (var u in Model)
+    {
+        <li>
+            <div class="flex items-center gap-2 rounded-full px-4 py-2 bg-base-200 border border-base-300">
+
+                <div class="avatar placeholder">
+                    <div class="bg-base-300 text-base-content rounded-full w-8">
+                        <span class="text-xs font-semibold">
+                            @(string.IsNullOrEmpty(u.Username) ? "?" : u.Username[0].ToString().ToUpper())
+                        </span>
+                    </div>
+                </div>
+
+                <span class="font-medium">@u.Username</span>
+
+                @if (u.Lobby.OwnerUserId == u.UserId)
+                {
+                    <span class="badge badge-warning ml-auto">Host</span>
+                }
+            </div>
+        </li>
+    }
+</ul>

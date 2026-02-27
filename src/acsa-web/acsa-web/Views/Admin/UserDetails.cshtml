@@ -1,0 +1,245 @@
+﻿@using acsa_web.Models
+@using acsa_web.Models.Matches
+@model acsa_web.Models.ViewModels.AdminUserManageVm
+
+@{
+    ViewData["Title"] = "Manage User";
+
+    var logs = Model.RecentUserLogs ?? new List<UserLog>();
+    var matches = Model.RecentMatches ?? new List<GameMatchPlayer>();
+
+    var sumKills = matches.Sum(x => x.Kills);
+    var sumDeaths = matches.Sum(x => x.Deaths);
+    var kd = sumDeaths > 0 ? (double)sumKills / sumDeaths : 0.0;
+
+    string TitleCase(string s)
+    {
+        if (string.IsNullOrWhiteSpace(s)) return "—";
+        return System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(s);
+    }
+
+    string LevelBadge(UserLogLevel lvl) => lvl switch
+    {
+        UserLogLevel.Info => "badge badge-info badge-outline",
+        UserLogLevel.Update => "badge badge-neutral",
+        UserLogLevel.Warning => "badge badge-warning badge-outline",
+        UserLogLevel.Error => "badge badge-error badge-outline",
+        _ => "badge badge-outline"
+    };
+
+    string StatusPill(bool banned) => banned ? "badge badge-error badge-outline" : "badge badge-success badge-outline";
+    string StatusText(bool banned) => banned ? "Banned" : "Active";
+}
+
+<style>
+    .shell {
+        max-width: 1500px;
+        margin: auto
+    }
+
+    .feed {
+        height: 720px;
+        border: 1px solid oklch(var(--b3));
+        border-radius: 1rem;
+        overflow: hidden
+    }
+
+    .feed-pane {
+        height: 100%;
+        overflow: auto
+    }
+
+    .pane-hidden {
+        display: none
+    }
+
+    .log-card {
+        border: 1px solid oklch(var(--b3));
+        border-radius: 1rem;
+        padding: 1rem
+    }
+</style>
+
+<div class="shell p-4">
+
+    <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl font-bold">@Model.Username</h1>
+        <a class="btn btn-ghost" asp-action="Users">Back</a>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- sidebar -->
+        <aside class="lg:col-span-4">
+            <div class="border border-base-300 rounded-xl p-5">
+
+                <div class="font-bold text-lg mb-2">@Model.Username</div>
+                <div class="text-sm opacity-70 mb-3">@Model.Email</div>
+
+                <div class="flex gap-2 mb-4">
+                    <span class="@StatusPill(Model.IsBanned)">@StatusText(Model.IsBanned)</span>
+                    @if (Model.IsAccountLinkedWithGame)
+                    {
+                        <span class="badge badge-success badge-outline">Linked</span>
+                    }
+                </div>
+
+                <form asp-action="UpdateUser" method="post" class="space-y-3">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="UserId" value="@Model.UserId" />
+
+                    <input class="input input-bordered w-full" value="@Model.Username" disabled />
+
+                    <input class="input input-bordered w-full" name="FullName" value="@Model.FullName" placeholder="Full name" />
+
+                    <input class="input input-bordered w-full" name="Email" value="@Model.Email" placeholder="Email" />
+
+                    <input class="input input-bordered w-full" name="PhoneNumber" value="@Model.PhoneNumber" placeholder="Phone" />
+
+                    <div class="form-control">
+                        <label class="label cursor-pointer justify-between">
+                            <span class="label-text text-error font-semibold">Banned</span>
+                            <input type="checkbox" class="toggle toggle-error" name="IsBanned" value="true"
+                                   @(Model.IsBanned ? "checked" : null) />
+                        </label>
+                    </div>
+
+                    <div class="flex gap-2 pt-2">
+                        <button class="btn btn-primary flex-1">Save</button>
+                        <a class="btn btn-ghost flex-1" asp-action="UserDetails" asp-route-id="@Model.UserId">Reset</a>
+                    </div>
+                </form>
+
+            </div>
+        </aside>
+
+        <!-- main pannel -->
+        <main class="lg:col-span-8">
+
+            <div class="join mb-4">
+                <button class="btn btn-sm join-item tabbtn btn-active" data-tab="logsTab">Logs</button>
+                <button class="btn btn-sm join-item tabbtn" data-tab="matchesTab">Matches</button>
+            </div>
+
+            <div class="feed">
+
+                <!-- logs -->
+                <div id="logsTab" class="feed-pane p-4 space-y-3">
+
+                    @if (!logs.Any())
+                    {
+                        <div class="text-sm opacity-60">No logs</div>
+                    }
+                    else
+                    {
+                        @foreach (var l in logs.OrderByDescending(x => x.CreatedAt))
+                        {
+                            <div class="log-card log-item" data-level="@l.Level" data-msg="@l.Message">
+                                <div class="flex items-center gap-2 text-xs mb-1">
+                                    <span class="@LevelBadge(l.Level)">@l.Level</span>
+                                    <span class="opacity-60">@l.CreatedAt.ToLocalTime()</span>
+                                </div>
+                                <div class="text-sm">@l.Message</div>
+                            </div>
+                        }
+}
+                </div>
+
+                <!-- matches -->
+                <div id="matchesTab" class="feed-pane p-4 pane-hidden">
+
+                    @if (!matches.Any())
+                    {
+                        <div class="text-sm opacity-60">No matches</div>
+                    }
+                    else
+                    {
+
+                        <table class="table table-sm w-full">
+                            <thead class="text-xs opacity-60">
+                                <tr>
+                                    <th>Map</th>
+                                    <th>Date</th>
+                                    <th>K</th>
+                                    <th>D</th>
+                                    <th>F</th>
+                                    <th>Mode</th>
+                                    <th>Team</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @foreach (var p in matches.OrderByDescending(x => x.Match != null ? x.Match.EndedAt : DateTime.MinValue))
+                                {
+                                    var ended = p.Match?.EndedAt.ToLocalTime();
+                                    var map = p.Match?.Map ?? "—";
+                                    var mode = p.Match?.Mode ?? "—";
+                                    var team = p.Team?.ToString() ?? "—";
+
+                                    <tr class="match-item"
+                                        data-map="@map"
+                                        data-mode="@mode"
+                                        data-team="@team"
+                                        data-kills="@p.Kills"
+                                        data-deaths="@p.Deaths"
+                                        data-flags="@p.Flags">
+
+                                        <td class="font-semibold">@map</td>
+                                        <td>@(ended?.ToString("dd MMM HH:mm") ?? "—")</td>
+                                        <td>@p.Kills</td>
+                                        <td>@p.Deaths</td>
+                                        <td>@(p.Flags == null ? "-" : p.Flags)</td>
+                                        <td>@TitleCase(mode)</td>
+                                        <td>@team</td>
+                                    </tr>
+
+                                    <tr class="hidden detail-row">
+                                        <td colspan="8">
+                                            <div class="text-xs opacity-70 py-2">
+                                                Map: @map |
+                                                Mode: @TitleCase(mode) |
+                                                Team: @team |
+                                                K/D: @p.Kills/@p.Deaths |
+                                                Flags: @p.Flags
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+
+            </div>
+        </main>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const btns=document.querySelectorAll(".tabbtn");
+        const logsTab=document.getElementById("logsTab");
+        const matchesTab=document.getElementById("matchesTab");
+
+        btns.forEach(b=>{
+        b.onclick=()=>{
+        btns.forEach(x=>x.classList.remove("btn-active"));
+        b.classList.add("btn-active");
+
+        logsTab.classList.toggle("pane-hidden",b.dataset.tab!=="logsTab");
+        matchesTab.classList.toggle("pane-hidden",b.dataset.tab!=="matchesTab");
+        };
+        });
+
+        document.addEventListener("click",e=>{
+        const btn=e.target.closest(".expand-btn");
+        if(!btn)return;
+
+        const tr=btn.closest("tr");
+        const detail=tr.nextElementSibling;
+        detail.classList.toggle("hidden");
+        btn.textContent=detail.classList.contains("hidden")?"Details":"Hide";
+        });
+    </script>
+}

@@ -1,0 +1,11 @@
+-nAssaultCube Secure Arena! Nopternal
+-oanti-temper secured server!
+-c10
+-x4960aef8d3c34d938fbbe3d032717174
+-f55345
+-p8529f2522cff41958c755f7ed3c2a363
+-Y2a4e3ad83a56d02368298860ac386533c653710d70e2f5e36c4df850a7731254
+--map=ac_africa
+--mode=10
+--userids=Dharminder:21bc08cb-7cf0-4355-8a5f-e9ce7646b817,SH:8ea3663b-481c-4a37-9ac2-eda0941bebbc,Misty:64a00e77-cfc3-4205-aed4-0ed952daa578
+-m

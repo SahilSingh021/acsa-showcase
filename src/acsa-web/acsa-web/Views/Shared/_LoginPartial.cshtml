@@ -1,0 +1,180 @@
+﻿@using Microsoft.AspNetCore.Identity
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
+@{
+    var user = await UserManager.GetUserAsync(User);
+
+    var displayName =
+        !string.IsNullOrWhiteSpace(user?.UserName) ? user!.UserName :
+        !string.IsNullOrWhiteSpace(User.Identity?.Name) ? User.Identity!.Name! :
+        "User";
+
+    var initial = !string.IsNullOrWhiteSpace(displayName)
+        ? displayName.Trim()[0].ToString().ToUpper()
+        : "?";
+}
+
+<div class="flex items-center gap-3">
+    @if (SignInManager.IsSignedIn(User))
+    {
+        <div class="relative" id="userDropdownWrap">
+            <button type="button"
+                    id="userDropdownBtn"
+                    class="btn btn-ghost h-11 px-3 gap-3">
+                <div class="avatar placeholder">
+                    <div class="bg-base-300 text-base-content rounded-full w-10">
+                        <span class="text-sm font-semibold">@initial</span>
+                    </div>
+                </div>
+
+                <span class="hidden sm:inline font-medium max-w-[180px] truncate">
+                    @displayName
+                </span>
+
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="h-5 w-5 opacity-70"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+
+            <div id="userDropdownMenu"
+                 class="hidden absolute right-0 mt-2 sm:mt-3 z-[999]">
+                <ul class="menu p-2 shadow bg-base-100 border border-base-300 rounded-box min-w-56 w-max">
+                    <li>
+                        <a asp-area="Identity" asp-page="/Account/Manage/Index">
+                            Manage Account
+                        </a>
+                    </li>
+
+                    <li>
+                        <form asp-area="Identity"
+                              asp-page="/Account/Logout"
+                              asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+                            <button type="submit" class="text-left w-full">Logout</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <script>
+            (function () {
+                const wrap = document.getElementById("userDropdownWrap");
+                const btn = document.getElementById("userDropdownBtn");
+                const menu = document.getElementById("userDropdownMenu");
+
+                if (!wrap || !btn || !menu) return;
+
+                function isOpen() { return !menu.classList.contains("hidden"); }
+                function open() { menu.classList.remove("hidden"); }
+                function close() { menu.classList.add("hidden"); }
+                function toggle() { isOpen() ? close() : open(); }
+
+                btn.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                    toggle();
+                });
+
+                document.addEventListener("click", function (e) {
+                    if (!wrap.contains(e.target)) close();
+                });
+
+                document.addEventListener("keydown", function (e) {
+                    if (e.key === "Escape") close();
+                });
+
+                menu.addEventListener("click", function (e) {
+                    const a = e.target.closest("a");
+                    const button = e.target.closest("button");
+                    if (a || button) close();
+                });
+            })();
+        </script>
+    }
+    else
+    {
+        <div class="hidden sm:flex items-center gap-3">
+            <a class="btn btn-ghost h-11 px-5"
+               asp-area="Identity"
+               asp-page="/Account/Login">
+                Login
+            </a>
+
+            <a class="btn btn-primary h-11 px-6"
+               asp-area="Identity"
+               asp-page="/Account/Register">
+                Register
+            </a>
+        </div>
+
+        <div class="relative sm:hidden" id="authDropdownWrap">
+            <button type="button"
+                    id="authDropdownBtn"
+                    class="btn btn-ghost h-11 px-3 gap-2">
+                <span class="font-medium">Account</span>
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="h-5 w-5 opacity-70"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+
+            <div id="authDropdownMenu"
+                 class="hidden absolute right-0 mt-2 z-[999]">
+                <ul class="menu p-2 shadow bg-base-100 border border-base-300 rounded-box min-w-56 w-max">
+                    <li>
+                        <a asp-area="Identity" asp-page="/Account/Login">Login</a>
+                    </li>
+                    <li>
+                        <a asp-area="Identity" asp-page="/Account/Register">Register</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <script>
+            (function () {
+                const wrap = document.getElementById("authDropdownWrap");
+                const btn = document.getElementById("authDropdownBtn");
+                const menu = document.getElementById("authDropdownMenu");
+
+                if (!wrap || !btn || !menu) return;
+
+                function isOpen() { return !menu.classList.contains("hidden"); }
+                function open() { menu.classList.remove("hidden"); }
+                function close() { menu.classList.add("hidden"); }
+                function toggle() { isOpen() ? close() : open(); }
+
+                btn.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                    toggle();
+                });
+
+                document.addEventListener("click", function (e) {
+                    if (!wrap.contains(e.target)) close();
+                });
+
+                document.addEventListener("keydown", function (e) {
+                    if (e.key === "Escape") close();
+                });
+
+                menu.addEventListener("click", function (e) {
+                    const a = e.target.closest("a");
+                    if (a) close();
+                });
+            })();
+        </script>
+    }
+</div>

@@ -1,0 +1,396 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using acsa_web.Models
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+
+@{
+    var _user = await UserManager.GetUserAsync(User);
+    var _isLoggedIn = _user != null;
+
+    var _isAdmin = _isLoggedIn && User.IsInRole("Admin");
+
+    var _isLinked = _user != null && _user.IsAccountLinkedWithGame;
+    var _canUseLobbies = _isLoggedIn && _isLinked;
+}
+
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - AC Secure Arena</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/acsa_web.styles.css" asp-append-version="true" />
+
+    <script>
+        tailwind.config = { theme: { extend: {} } }
+    </script>
+</head>
+
+<body class="min-h-screen bg-base-200">
+
+    <div class="navbar bg-base-100 border-b border-base-300 fixed top-0 left-0 right-0 z-50">
+        <div class="flex-none lg:hidden">
+            <label for="app-drawer" class="btn btn-square btn-ghost" aria-label="Open menu">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </label>
+        </div>
+
+        <div class="flex-1">
+            <a class="btn btn-ghost text-xl" asp-controller="Home" asp-action="Index">AC Secure Arena</a>
+        </div>
+
+        <div class="flex-none gap-2">
+            <label class="swap swap-rotate btn btn-ghost btn-square" title="Toggle theme">
+                <input type="checkbox" id="themeToggle" />
+                <svg class="swap-on fill-current w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M5 12h1M12 5v1M18 12h1M12 18v1M7.05 7.05l.7.7M16.24 16.24l.7.7M16.95 7.05l-.7.7M7.76 16.24l-.7.7M12 8a4 4 0 100 8 4 4 0 000-8z" />
+                </svg>
+                <svg class="swap-off fill-current w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M21 12.79A9 9 0 1111.21 3c0 .34.02.67.05 1A7 7 0 0021 12.79z" />
+                </svg>
+            </label>
+
+            <partial name="_LoginPartial" />
+        </div>
+    </div>
+
+    <div class="drawer lg:drawer-open pt-16">
+        <input id="app-drawer" type="checkbox" class="drawer-toggle" />
+
+        <div class="drawer-content">
+            <div class="p-4 lg:p-6">
+                <div class="mb-4 flex flex-col gap-2">
+                    <div class="text-sm breadcrumbs">
+                        <ul>
+                            <li><a asp-controller="Home" asp-action="Index">Home</a></li>
+                            <li>@(ViewData["Title"] ?? "Page")</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <main role="main" class="card bg-base-100 shadow-xl border border-base-300">
+                    <div class="card-body">
+                        @RenderBody()
+                    </div>
+                </main>
+
+                <footer class="mt-6 text-sm text-base-content/60 flex flex-col sm:flex-row gap-2 justify-between">
+                    <div>© AC Secure Arena</div>
+                    <a>#SECURED</a>
+                </footer>
+            </div>
+        </div>
+
+        <div class="drawer-side pt-16 lg:pt-0">
+            <label for="app-drawer" class="drawer-overlay"></label>
+
+            <aside class="menu p-4 w-64 min-h-full bg-base-100 border-r border-base-300 flex flex-col">
+                <div class="mb-4">
+                    <div class="text-xs uppercase opacity-60">Navigation</div>
+                </div>
+
+                <ul class="menu menu-md gap-1">
+                    <li>
+                        <a asp-controller="Home" asp-action="Index" class="active:!bg-primary/20">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l9-9 9 9M4 10v10h6V14h4v6h6V10" />
+                            </svg>
+                            Home
+                        </a>
+                    </li>
+
+                    <div class="divider my-2"></div>
+
+                    <li class="menu-title"><span>Lobbies</span></li>
+
+                    <!-- create lobby -->
+                    @if (_canUseLobbies)
+                    {
+                        <li>
+                            <a asp-controller="Lobbies" asp-action="Index" asp-route-openCreate="1">
+                                <span class="flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Create Lobby
+                                </span>
+                            </a>
+                        </li>
+                    }
+                    else if (_isLoggedIn && !_isLinked)
+                    {
+                        <li>
+                            <span class="opacity-60 px-4 py-2 select-none cursor-not-allowed">
+                                <span class="flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86l-7.4 13.2A2 2 0 004.63 20h14.74a2 2 0 001.74-2.94l-7.4-13.2a2 2 0 00-3.42 0z" />
+                                    </svg>
+                                    <span class="flex flex-col leading-tight">
+                                        <span>Create Lobby</span>
+                                        <span class="text-xs opacity-70">Verify Account</span>
+                                    </span>
+                                </span>
+                            </span>
+                        </li>
+                    }
+                    else
+                    {
+                        <li>
+                            <span class="opacity-60 px-4 py-2 select-none cursor-not-allowed">
+                                <span class="flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 21v-1a6 6 0 0112 0v1" />
+                                    </svg>
+                                    <span class="flex flex-col leading-tight">
+                                        <span>Create Lobby</span>
+                                        <span class="text-xs opacity-70">Login required</span>
+                                    </span>
+                                </span>
+                            </span>
+                        </li>
+                    }
+
+                    <!-- browse lobbies -->
+                    @if (_canUseLobbies)
+                    {
+                        <li>
+                            <a asp-controller="Lobbies" asp-action="Index">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" />
+                                </svg>
+                                Browse Lobbies
+                            </a>
+                        </li>
+                    }
+                    else if (_isLoggedIn && !_isLinked)
+                    {
+                        <li>
+                            <span class="opacity-60 px-4 py-2 select-none cursor-not-allowed">
+                                <span class="flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86l-7.4 13.2A2 2 0 004.63 20h14.74a2 2 0 001.74-2.94l-7.4-13.2a2 2 0 00-3.42 0z" />
+                                    </svg>
+                                    <span class="flex flex-col leading-tight">
+                                        <span>Browse Lobbies</span>
+                                        <span class="text-xs opacity-70">Verify Account</span>
+                                    </span>
+                                </span>
+                            </span>
+                        </li>
+                    }
+                    else
+                    {
+                        <li>
+                            <span class="opacity-60 px-4 py-2 select-none cursor-not-allowed">
+                                <span class="flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 21v-1a6 6 0 0112 0v1" />
+                                    </svg>
+                                    <span class="flex flex-col leading-tight">
+                                        <span>Browse Lobbies</span>
+                                        <span class="text-xs opacity-70">Login required</span>
+                                    </span>
+                                </span>
+                            </span>
+                        </li>
+                    }
+
+                    <div class="divider my-2"></div>
+
+                    <li class="menu-title"><span>Stats</span></li>
+                    <li>
+                        <a asp-controller="Leaderboard" asp-action="Index">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3v18h18M7 14l3-3 3 3 6-6" />
+                            </svg>
+                            Global Leaderboard
+                        </a>
+                    </li>
+
+                    <!-- my match history -->
+                    @if (_isLoggedIn)
+                    {
+                        @if (!_isLinked)
+                        {
+                            <li>
+                                <span class="opacity-60 px-4 py-2 select-none cursor-not-allowed">
+                                    <span class="flex items-center gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-2.64-6.36M21 3v6h-6" />
+                                        </svg>
+                                        <span class="flex flex-col leading-tight">
+                                            <span>My Match History</span>
+                                            <span class="text-xs opacity-70">Verify Account</span>
+                                        </span>
+                                    </span>
+                                </span>
+                            </li>
+                        }
+                        else
+                        {
+                            <li>
+                                <a asp-controller="Players" asp-action="History" asp-route-username="@_user!.UserName">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-2.64-6.36M21 3v6h-6" />
+                                    </svg>
+                                    My Match History
+                                </a>
+                            </li>
+                        }
+                    }
+                    else
+                    {
+                        <li>
+                            <span class="opacity-60 px-4 py-2 select-none cursor-not-allowed">
+                                <span class="flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 21v-1a6 6 0 0112 0v1" />
+                                    </svg>
+                                    <span class="flex flex-col leading-tight">
+                                        <span>My Match History</span>
+                                        <span class="text-xs opacity-70">Login required</span>
+                                    </span>
+                                </span>
+                            </span>
+                        </li>
+                    }
+
+                    @if (_isAdmin)
+                    {
+                        <div class="divider my-2"></div>
+                        <li class="menu-title"><span>Admin</span></li>
+
+                        <li>
+                            <a asp-controller="Admin" asp-action="MaliciousLogs">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3l8 4v6c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V7l8-4z" />
+                                </svg>
+                                Malicious Logs
+                            </a>
+                        </li>
+
+                        <li>
+                            <a asp-controller="Admin" asp-action="Logs">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3a9 9 0 100 18 9 9 0 000-18zM9 17v-2a4 4 0 014-4h4m0 0l-3-3m3 3l-3 3" />
+                                </svg>
+                                Admin Logs
+                            </a>
+                        </li>
+
+                        <li>
+                            <a asp-controller="Admin" asp-action="Users">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" />
+                                </svg>
+                                Manage Users
+                            </a>
+                        </li>
+                    }
+
+                    <div class="divider my-2"></div>
+
+                    <li class="menu-title"><span>Support</span></li>
+
+                    @if (_isLoggedIn)
+                    {
+                        <li>
+                            <a asp-controller="Home" asp-action="Support">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 10c0-3.314-2.686-6-6-6S6 6.686 6 10v3a4 4 0 004 4h4a4 4 0 004-4v-3zM8 21h8" />
+                                </svg>
+                                Contact Support
+                            </a>
+                        </li>
+                    }
+                    else
+                    {
+                        <li>
+                            <span class="opacity-60 px-4 py-2 select-none cursor-not-allowed">
+                                <span class="flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 21v-1a6 6 0 0112 0v1" />
+                                    </svg>
+                                    <span class="flex flex-col leading-tight">
+                                        <span>Contact Support</span>
+                                        <span class="text-xs opacity-70">Login required</span>
+                                    </span>
+                                </span>
+                            </span>
+                        </li>
+                    }
+
+                    <!-- verification / download -->
+                    @if (_user != null)
+                    {
+                        <div class="divider my-2"></div>
+                        <li class="menu-title"><span>Download & Verification</span></li>
+
+                        <li>
+                            <a href="/ASCA_GAME.zip" download class="hover:bg-primary/10">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+                                </svg>
+                                Download Game
+                            </a>
+                        </li>
+                    }
+
+                    @if (_user != null && !_isLinked)
+                    {
+                        <li>
+                            <a asp-controller="Home" asp-action="LinkAccountWithGame" class="text-warning hover:bg-warning/10">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86l-7.4 13.2A2 2 0 004.63 20h14.74a2 2 0 001.74-2.94l-7.4-13.2a2 2 0 00-3.42 0z" />
+                                </svg>
+                                Verify Account
+                            </a>
+                        </li>
+                    }
+                    else if (_user != null && _isLinked)
+                    {
+                        <li>
+                            <a asp-controller="Home" asp-action="LinkAccountWithGame" class="text-success hover:bg-success/10">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Account Linked
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script>
+        const key = "acsa_theme";
+        const html = document.documentElement;
+        const toggle = document.getElementById("themeToggle");
+
+        const savedTheme = localStorage.getItem(key) || "dark";
+        html.setAttribute("data-theme", savedTheme);
+        toggle.checked = savedTheme === "light";
+
+        toggle.addEventListener("change", () => {
+            const newTheme = toggle.checked ? "light" : "dark";
+            html.setAttribute("data-theme", newTheme);
+            localStorage.setItem(key, newTheme);
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
