@@ -179,7 +179,7 @@ dotnet user-secrets set "ConnectionStrings:DefaultConnection" "YOUR_CONNECTION_S
 
 ### Database
 
--   SQL Server (development environment)
+-   SQL Server
 
 ------------------------------------------------------------------------
 
